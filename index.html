@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>ARCHIVE_OS // Media Virtualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap"
+    rel="stylesheet">
+  <link href="styles/style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<header>
+    <h1>ARCHIVE_OS <small style="font-size:0.5em; opacity:0.7">// VIRTUALIZER</small></h1>
+    <nav>
+      <button onclick="switchTab('summon')">DATA SCANNER</button>
+      <button onclick="switchTab('manage')">VIRTUAL ASSETS</button>
+      <button onclick="switchTab('training')">NEURAL LINK</button>
+    </nav>
+    
+    <div class="stats">
+      <div id="cpu-display" style="font-size: 0.7em; color: #aaa; text-align:right; margin-bottom:2px">
+        CPU: [ NONE ]
+      </div>
+
+      <div style="display:flex; align-items:center; gap:15px">
+          <div style="text-align:right">
+              <div style="font-size:0.7em; color:#0af">MENTAL STABILITY</div>
+              <div class="progress-bar-bg" style="width:100px; height:6px; margin-top:2px; background:#111; border:1px solid #333">
+                  <div id="admin-stamina-bar" style="width:100%; height:100%; background:#0af; box-shadow:0 0 5px #0af; transition:width 0.2s"></div>
+              </div>
+          </div>
+
+          <div onclick="toggleProfile()" class="user-badge-container">
+            <div style="margin-right:10px">BUFFER: <span id="qp-count">1000</span> TB</div>
+            <div class="admin-badge" id="admin-badge-el">[ ADMIN_ID ]</div>
+          </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="user-profile-panel" class="side-panel">
+      <div class="panel-header">
+          <h2>ADMIN PROFILE</h2>
+          <button onclick="toggleProfile()" class="close-btn">×</button>
+      </div>
+      <div class="panel-content" id="user-stats-content">
+          </div>
+  </div>
+  <div id="view-training" class="hidden">
+      <div class="training-container">
+          <div class="training-sidebar">
+              <h3>SYNC TARGET</h3>
+              <div id="training-unit-list"></div>
+          </div>
+          
+          <div class="training-main">
+              <div id="training-area">
+                  <p>> SELECT A UNIT TO BEGIN NEURAL SYNC...</p>
+              </div>
+          </div>
+      </div>
+    </div>
+    <div id="view-summon">
+      <h2>SOURCE SELECTOR</h2>
+      <p>Choose a data stream to synchronize.</p>
+
+      <div id="banner-container" class="banner-list">
+      </div>
+
+      <div id="summon-actions" class="hidden">
+        <h3 id="selected-banner-title" style="color:var(--accent-primary); margin-bottom:5px">BANNER NAME</h3>
+        <p id="selected-banner-desc" style="font-size:0.8em; color:#888; margin-top:0">Description</p>
+
+        <div class="summon-controls">
+          <button class="summon-btn single" onclick="summonSingle()">
+            <span class="cost">10 TB</span><br>SECTOR SCAN
+          </button>
+          <button class="summon-btn multi" onclick="summonMulti()">
+            <span class="cost">100 TB</span><br>DEEP DIVE (x10)
+          </button>
+        </div>
+        <button onclick="closeBanner()" style="margin-top:10px; border:none; color:#555; background:transparent">◀
+          RETURN TO SOURCE LIST</button>
+      </div>
+
+      <div id="summon-result" class="hidden"></div>
+    </div>
+
+    <div id="view-manage" class="hidden">
+      <div class="management-container">
+        <div class="sidebar">
+          <h3>RESTORED ASSETS</h3>
+          <div id="unit-list"></div>
+        </div>
+        <div class="main-panel">
+          <div id="unit-details">
+            <p>> SELECT A FILE TO ANALYZE...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scanlines"></div>
+
+    <div id="console-container" class="collapsed">
+      <div id="console-header" onclick="toggleLog()">
+        <span class="blink">></span> SYSTEM_LOG // <span id="log-status">OFFLINE</span>
+        <button onclick="event.stopPropagation(); hardReset()" class="reset-btn">PURGE DATA</button>
+        <button class="toggle-btn">▲</button>
+      </div>
+      <div id="console-log">
+        <div class="log-entry">> ARCHIVE_OS BOOT SEQUENCE COMPLETE...</div>
+      </div>
+    </div>
+  </main>
+  <div id="sys-modal" class="hidden">
+    <div class="modal-content">
+        <h2 id="modal-title">SYSTEM ALERT</h2>
+        <div id="modal-body">MESSAGE CONTENT</div>
+        <button onclick="closeModal()">ACKNOWLEDGE</button>
+    </div>
+</div>  
+  <script src="scripts/datas.js"></script>
+  <script src="scripts/globals.js"></script> 
+  <script src="scripts/utils.js"></script> 
+  <script src="scripts/view.js"></script>
+  <script src="scripts/mechanics.js"></script>
+  <script src="scripts/main.js"></script> 
+</body>
+
+</html>
