@@ -1,10 +1,10 @@
 function createUnitInstance(template) {
     let baseRes = Math.floor(Math.random() * 40) + 10;
-    
+
     // 1. Calcolo Base (Come prima)
     let rarityMult = template.rarity * 5;
-    let defStat = 10 + Math.floor(Math.random() * 20) + rarityMult; 
-    let chaStat = 10 + Math.floor(Math.random() * 20) + rarityMult; 
+    let defStat = 10 + Math.floor(Math.random() * 20) + rarityMult;
+    let chaStat = 10 + Math.floor(Math.random() * 20) + rarityMult;
     let lucStat = Math.floor(Math.random() * 50);
 
     // 2. CREAZIONE OGGETTO
@@ -140,7 +140,11 @@ function assignTask(uIdx, type, tIdx) {
     if (task.category === 'COMBAT' && unit.role === 'ASSISTANT') { log(`ERR: ${unit.name} incompatible with Combat.`); return; }
     if (task.category === 'LOGIC' && unit.role === 'OPERATOR') { log(`ERR: ${unit.name} incompatible with Logic.`); return; }
     if (type === 'missions') {
-        if (unit.atk < task.minAtk) { log(`ERR: Insufficient Power (Req: ${task.minAtk}).`); return; }
+        // MODIFICA QUI: Messaggio di errore aggiornato
+        if (unit.atk < task.minAtk) {
+            log(`ERR: Insufficient ATK (Req: ${task.minAtk}).`);
+            return;
+        }
     }
 
     unit.state = type === 'training' ? "TRAINING" : "WORKING";
@@ -282,26 +286,21 @@ function load() {
 
         // Fix Units: Ripara dati mancanti e aggiorna strutture vecchie
         myUnits.forEach(u => {
-            // 1. FIX SEX (Il pezzo che mancava nel tuo file)
-            // Se l'unità non ha un sesso, lo recupera dal Database originale
             if (!u.sex) {
                 let original = UNIT_DB.find(x => x.id === u.id);
-                u.sex = original ? original.sex : "UNKNOWN"; // <--- PEZZO MANCANTE AGGIUNTO
+                u.sex = original ? original.sex : "UNKNOWN";
             }
             if (u.res === undefined) u.res = 20;
             if (u.cha === undefined) u.cha = 20;
             if (u.luc === undefined) u.luc = 10;
-            // 2. Fix Affinity
             if (u.affinity === undefined) u.affinity = 0;
 
-            // 3. Fix Neural Stats
             if (!u.neuralStats) u.neuralStats = { adminKoCount: 0, unitKoCount: 0, history: {} };
             if (u.neuralStats.koCount !== undefined) {
                 u.neuralStats.adminKoCount = u.neuralStats.koCount;
                 delete u.neuralStats.koCount;
             }
 
-            // 4. Fix Psyche
             if (!u.psyche) {
                 let baseRes = Math.floor(Math.random() * 40) + 10;
                 u.psyche = {
@@ -313,7 +312,6 @@ function load() {
             }
         });
 
-        // Fix Linker
         let linker = myUnits.find(u => u.state === 'LINKED');
         if (linker) activeNeuralUid = linker.uid;
         else activeNeuralUid = null;
@@ -326,18 +324,22 @@ function load() {
 
         log("SYSTEM: Previous session restored.");
     } else {
-        // ... new game logic ...
         userStats = {
             totalSummons: 0, totalOps: 0, adminLvl: 1, adminXp: 0, joinDate: Date.now(),
             stamina: 100, maxStamina: 100, state: "ACTIVE"
         };
-        // Crea l'unità iniziale
         myUnits = [createUnitInstance(UNIT_DB[0])];
         log("SYSTEM: New archive initialized.");
     }
+
     updateGlobalBonus();
     render();
-    renderBannerList();
+
+    // --- MODIFICA QUI ---
+    // Invece di renderBannerList(), chiamiamo il nuovo banner
+    if (typeof renderFeaturedBanner === "function") {
+        renderFeaturedBanner();
+    }
 }
 function toggleLock(i) { myUnits[i].isLocked = !myUnits[i].isLocked; renderDetails(); }
 function toggleAdvisor(i) {

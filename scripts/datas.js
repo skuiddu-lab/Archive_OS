@@ -68,24 +68,40 @@ const BANNERS = [
     { id: 'solo', name: 'GATE: DUNGEON', source: 'SOLO', color: '#4488ff', desc: 'System Players and Shadows.' }
 ];
 
-// Per importare facilmente task: Basta aggiungere oggetti a questo array.
-// Modulo 'requirements' aggiunto per filtrare chi può farle.
 const TASKS = {
     training: [
-        { id: 't_phys', name: 'Physical Cond.', category: 'COMBAT', duration: 1000, stat: 'atk', gain: 0.5, cost: 0 },
-        { id: 't_med', name: 'Meditation', category: 'LOGIC', duration: 1000, stat: 'adm', gain: 0.5, cost: 0 },
-        { id: 't_soc', name: 'Social Studies', category: 'UNIVERSAL', duration: 2000, stat: 'cha', gain: 0.5, cost: 0 }
+        { id: 'sim_combat', name: 'Combat Simulation', category: 'COMBAT', duration: 1000, stat: 'atk', gain: 0.5, cost: 0 },
+        { id: 'sim_hp', name: 'Firewall Hardening', category: 'COMBAT', duration: 1000, stat: 'hp', gain: 5, cost: 0 },
+        { id: 'sim_logic', name: 'Algorithm Study', category: 'LOGIC', duration: 2000, stat: 'adm', gain: 0.5, cost: 0 },
+        { id: 'sim_res', name: 'Mental Defrag', category: 'UNIVERSAL', duration: 5000, stat: 'res', gain: 0.2, cost: 0 }
     ],
     missions: [
-        // One Piece Missions
-        { id: 'm_east_blue', name: 'Patrol East Blue', category: 'COMBAT', duration: 5000, rewardQP: 20, minAtk: 50, dmg: 20, tags: ['PIRATE', 'MARINE'] },
-        { id: 'm_marineford', name: 'War of the Best', category: 'COMBAT', duration: 30000, rewardQP: 500, minAtk: 500, dmg: 1500, tags: ['PIRATE'] },
-        
-        // Naruto Missions
-        { id: 'm_cat', name: 'Catch the Cat', category: 'LOGIC', duration: 3000, rewardQP: 10, minAtk: 10, dmg: 5, tags: ['NINJA'] },
-        { id: 'm_chuunin', name: 'Chuunin Exams', category: 'COMBAT', duration: 15000, rewardQP: 150, minAtk: 200, dmg: 300, tags: ['NINJA'] },
-
-        // Generic
-        { id: 'm_rats', name: 'Clear Rats', category: 'COMBAT', duration: 2000, rewardQP: 5, minAtk: 5, dmg: 1 }
+        // TIER 1: E-RANK (Facili)
+        { 
+            id: 'm_scan_sec', name: 'Sector Scan (E-Rank)', category: 'LOGIC', duration: 3000, 
+            rewardQP: 15, minAtk: 10, dmg: 5, 
+            desc: "Routine scan for corrupted data packets.",
+            dropRate: 0.1, dropPool: ['pot_s']
+        },
+        { 
+            id: 'm_hunt_bug', name: 'Bug Hunting (E-Rank)', category: 'COMBAT', duration: 5000, 
+            rewardQP: 25, minAtk: 30, dmg: 20, 
+            desc: "Eliminate small visual glitches in the rendering sector.",
+            dropRate: 0.2, dropPool: ['pot_s']
+        },
+        // TIER 2: C-RANK (Intermedie)
+        { 
+            id: 'm_firewall', name: 'Breach Firewall (C-Rank)', category: 'COMBAT', duration: 15000, 
+            rewardQP: 80, minAtk: 150, dmg: 100, 
+            desc: "Force entry into a locked data vault. Enemies expected.",
+            dropRate: 0.3, dropPool: ['piece_map', 'pot_s']
+        },
+        // TIER 3: A-RANK (Difficili)
+        { 
+            id: 'm_virus_king', name: 'Purge Trojan Boss (A-Rank)', category: 'COMBAT', duration: 45000, 
+            rewardQP: 500, minAtk: 600, dmg: 800, 
+            desc: "A massive virus is consuming the sector. Total extermination required.",
+            dropRate: 0.5, dropPool: ['g_fruit', 'xp_chip']
+        }
     ]
 };

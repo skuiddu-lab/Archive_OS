@@ -13,23 +13,23 @@
 </head>
 
 <body>
-<header>
+  <header>
     <h1>ARCHIVE_OS <small style="font-size:0.5em; opacity:0.7">// VIRTUALIZER</small></h1>
     <nav>
       <button onclick="switchTab('summon')">DATA SCANNER</button>
       <button onclick="switchTab('manage')">VIRTUAL ASSETS</button>
     </nav>
-    
+
     <div class="stats">
       <div id="cpu-display" style="font-size: 0.7em; color: #aaa; text-align:right; margin-bottom:2px">
         CPU: [ NONE ]
       </div>
 
       <div style="display:flex; align-items:center; gap:15px">
-          <div onclick="toggleProfile()" class="user-badge-container">
-            <div style="margin-right:10px">BUFFER: <span id="qp-count">1000</span> TB</div>
-            <div class="admin-badge" id="admin-badge-el">[ ADMIN_ID ]</div>
-          </div>
+        <div onclick="toggleProfile()" class="user-badge-container">
+          <div style="margin-right:10px">BUFFER: <span id="qp-count">1000</span> TB</div>
+          <div class="admin-badge" id="admin-badge-el">[ ADMIN_ID ]</div>
+        </div>
       </div>
     </div>
   </header>
@@ -37,33 +37,35 @@
   <main>
     <div id="user-profile-panel" class="side-panel">
       <div class="panel-header">
-          <h2>ADMIN PROFILE</h2>
-          <button onclick="toggleProfile()" class="close-btn">×</button>
+        <h2>ADMIN PROFILE</h2>
+        <button onclick="toggleProfile()" class="close-btn">×</button>
       </div>
       <div class="panel-content" id="user-stats-content">
-          </div>
-  </div>
-    <div id="view-summon">
-      <h2>SOURCE SELECTOR</h2>
-      <p>Choose a data stream to synchronize.</p>
+      </div>
+    </div>
 
-      <div id="banner-container" class="banner-list">
+    <div id="view-summon">
+      <h2 style="margin-bottom: 5px; color:var(--accent-primary)">SOURCE SELECTOR</h2>
+      <p style="margin-top: 0; color:#888">Choose a data stream to synchronize.</p>
+
+      <div class="carousel-container">
+        <button class="nav-arrow" onclick="prevBanner()">❮</button>
+
+        <div id="active-banner-card" class="featured-banner">
+        </div>
+
+        <button class="nav-arrow" onclick="nextBanner()">❯</button>
       </div>
 
-      <div id="summon-actions" class="hidden">
-        <h3 id="selected-banner-title" style="color:var(--accent-primary); margin-bottom:5px">BANNER NAME</h3>
-        <p id="selected-banner-desc" style="font-size:0.8em; color:#888; margin-top:0">Description</p>
-
+      <div id="summon-actions" class="summon-actions-panel">
         <div class="summon-controls">
           <button class="summon-btn single" onclick="summonSingle()">
-            <span class="cost">10 TB</span><br>SECTOR SCAN
+            <span class="cost">10 TB</span><br>SINGLE SCAN
           </button>
           <button class="summon-btn multi" onclick="summonMulti()">
-            <span class="cost">100 TB</span><br>DEEP DIVE (x10)
+            <span class="cost">100 TB</span><br>MULTI SCAN (x10)
           </button>
         </div>
-        <button onclick="closeBanner()" style="margin-top:10px; border:none; color:#555; background:transparent">◀
-          RETURN TO SOURCE LIST</button>
       </div>
 
       <div id="summon-result" class="hidden"></div>
@@ -98,17 +100,28 @@
   </main>
   <div id="sys-modal" class="hidden">
     <div class="modal-content">
-        <h2 id="modal-title">SYSTEM ALERT</h2>
-        <div id="modal-body">MESSAGE CONTENT</div>
-        <button onclick="closeModal()">ACKNOWLEDGE</button>
+      <h2 id="modal-title">SYSTEM ALERT</h2>
+      <div id="modal-body">MESSAGE CONTENT</div>
+      <button onclick="closeModal()">ACKNOWLEDGE</button>
     </div>
-</div>  
+  </div>
+  <div id="summon-modal-overlay" class="hidden">
+    <div class="summon-modal-box">
+        <div class="summon-header">
+            <h3>// SCAN COMPLETE</h3>
+        </div>
+        
+        <div id="summon-result-content"></div>
+
+        <button class="summon-confirm-btn" onclick="closeSummonModal()">ACQUIRE DATA</button>
+    </div>
+</div>
   <script src="scripts/datas.js"></script>
-  <script src="scripts/globals.js"></script> 
-  <script src="scripts/utils.js"></script> 
+  <script src="scripts/globals.js"></script>
+  <script src="scripts/utils.js"></script>
   <script src="scripts/view.js"></script>
   <script src="scripts/mechanics.js"></script>
-  <script src="scripts/main.js"></script> 
+  <script src="scripts/main.js"></script>
 </body>
 
 </html>

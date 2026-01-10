@@ -163,7 +163,9 @@ function generateTaskGrid(u) {
 
         let isMission = t.type === 'missions';
         let sub = isMission ? `RWD: ${t.rewardQP} TB` : `+${t.gain} ${t.stat.toUpperCase()}`;
-        let req = isMission ? `<div style="color:#f55; font-size:0.7em">REQ: ${t.minAtk} PWR</div>` : '';
+
+        // MODIFICA QUI: Cambiato "PWR" in "ATK"
+        let req = isMission ? `<div style="color:#f55; font-size:0.7em">REQ: ${t.minAtk} ATK</div>` : '';
 
         html += `
             <div class="action-card" onclick="assignTask(${selectedUnitIndex}, '${t.type}', ${t.idx})">
@@ -175,76 +177,99 @@ function generateTaskGrid(u) {
     html += "</div>";
     return html;
 }
-
-function renderBannerList() {
-    const container = document.getElementById('banner-container');
-    container.innerHTML = "";
-
-    BANNERS.forEach((b, index) => {
-        container.innerHTML += `
-            <div class="banner-card" style="border-left-color: ${b.color}" onclick="selectBanner(${index})">
-                <h3 style="color:${b.color}">${b.name}</h3>
-                <p>${b.desc}</p>
-            </div>
-        `;
-    });
+function nextBanner() {
+    currentBannerIndex++;
+    if (currentBannerIndex >= BANNERS.length) currentBannerIndex = 0;
+    renderFeaturedBanner();
 }
 
-function selectBanner(index) {
-    currentBannerIndex = index;
-    const banner = BANNERS[index];
-
-    // Nascondi lista, mostra controlli
-    document.getElementById('banner-container').classList.add('hidden');
-    document.getElementById('summon-actions').classList.remove('hidden');
-
-    // Aggiorna testi
-    document.getElementById('selected-banner-title').innerText = banner.name;
-    document.getElementById('selected-banner-title').style.color = banner.color;
-    document.getElementById('selected-banner-desc').innerText = banner.desc;
+function prevBanner() {
+    currentBannerIndex--;
+    if (currentBannerIndex < 0) currentBannerIndex = BANNERS.length - 1;
+    renderFeaturedBanner();
 }
-function closeBanner() {
-    document.getElementById('banner-container').classList.remove('hidden');
-    document.getElementById('summon-actions').classList.add('hidden');
-    document.getElementById('summon-result').classList.add('hidden');
-    document.getElementById('summon-result').innerHTML = "";
+
+function renderFeaturedBanner() {
+    const b = BANNERS[currentBannerIndex];
+    const card = document.getElementById('active-banner-card');
+
+    if (!card) return;
+
+    // Effetti visivi basati sul colore del banner
+    card.style.borderColor = b.color;
+    card.style.boxShadow = `0 0 40px ${b.color}15`; // 15 = bassa opacità
+
+    // Contenuto Banner
+    card.innerHTML = `
+        <div class="banner-source" style="color:${b.color}; border-color:${b.color}">// SOURCE: ${b.source}</div>
+        <h2 style="color:${b.color}; text-shadow:0 0 15px ${b.color}40">${b.name}</h2>
+        <p>${b.desc}</p>
+        <div style="margin-top:30px; font-size:0.8em; color:#555; font-family:var(--font-mono)">
+            ID: ${b.id.toUpperCase()} <span style="margin:0 10px">|</span> RATE-UP: <span style="color:#fff">ACTIVE</span>
+        </div>
+    `;
 }
+// scripts/view.js
+
+// Funzione per chiudere la modale
+function closeSummonModal() {
+    const overlay = document.getElementById('summon-modal-overlay');
+    overlay.classList.add('hidden');
+    document.getElementById('summon-result-content').innerHTML = ""; // Pulisci memoria
+}
+
 function summonSingle() {
     if (qp < 10) { log("ERROR: Insufficient Buffer (Need 10 TB)."); return; }
     qp -= 10; updateGlobalBonus();
 
-    let resDiv = document.getElementById('summon-result');
-    resDiv.innerHTML = ""; resDiv.className = "hidden";
+    // Mostra Overlay
+    const overlay = document.getElementById('summon-modal-overlay');
+    const content = document.getElementById('summon-result-content');
+
+    content.innerHTML = "<div class='blink'>DECODING DATA STREAM...</div>";
+    content.className = ""; // Rimuovi griglia (centrato per singola)
+    overlay.classList.remove('hidden');
 
     log("SCANNER: Initializing Sector Scan...");
+
     setTimeout(() => {
         let res = processSummonLogic();
         log(res.msg);
-        resDiv.classList.remove('hidden');
-        // Rimuovi classe mini per single view
-        resDiv.innerHTML = res.html.replace('mini', '');
+
+        // Rimuovi la classe 'mini' per farla vedere grande nella singola
+        // E aggiungi un'animazione di entrata
+        content.innerHTML = res.html.replace('mini', 'summon-card');
         renderSidebar();
-    }, 300);
+    }, 500); // Ritardo scenico
 }
+
 function summonMulti() {
     if (qp < 100) { log("ERROR: Insufficient Buffer (Need 100 TB)."); return; }
     qp -= 100; updateGlobalBonus();
 
-    let resDiv = document.getElementById('summon-result');
-    resDiv.innerHTML = ""; resDiv.className = "summon-grid hidden";
+    const overlay = document.getElementById('summon-modal-overlay');
+    const content = document.getElementById('summon-result-content');
+
+    content.innerHTML = "<div class='blink'>BATCH PROCESSING (x10)...</div>";
+    content.className = ""; // Reset classe
+    overlay.classList.remove('hidden');
 
     log("SCANNER: ⚡ DEEP DIVE INITIATED...");
+
     setTimeout(() => {
-        resDiv.classList.remove('hidden');
+        content.classList.add('grid-layout'); // Attiva griglia
         let html = "";
+
         for (let i = 0; i < 10; i++) {
             let res = processSummonLogic();
+            // Aggiunge un ritardo a cascata per ogni carta (effetto scenico)
             html += res.html.replace('mini', `mini" style="animation-delay:${i * 0.1}s`);
         }
-        resDiv.innerHTML = html;
+
+        content.innerHTML = html;
         log("SCANNER: Batch reconstruction complete.");
         renderSidebar();
-    }, 500);
+    }, 800);
 }
 function updateGlobalBonus() {
     // ... (Codice esistente calcolo bonus ...)
@@ -288,9 +313,9 @@ function switchTab(t) {
     if (t === 'summon') {
         document.getElementById('summon-result').innerHTML = "";
         document.getElementById('summon-result').className = "hidden";
-        closeBanner();
-        renderBannerList();
 
+        // AVVIA IL CAROSELLO
+        renderFeaturedBanner();
     } else {
         render();
     }
