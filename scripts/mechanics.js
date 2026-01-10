@@ -32,14 +32,6 @@ function createUnitInstance(template) {
         // Fix Sex (Se mancante nel template, default Unknown)
         sex: template.sex || "UNKNOWN",
 
-        psyche: {
-            archetype: "UNSTABLE",
-            resistance: baseRes,
-            stress: 0,
-            trust: 0
-        },
-
-        neuralStats: { adminKoCount: 0, unitKoCount: 0, history: {} }
     };
 }
 function processSummonLogic() {
@@ -164,10 +156,16 @@ function completeTask(unit) {
     if (unit.state === "TRAINING") {
         // Stats Base
         if (task.stat === 'atk') unit.atk += task.gain;
-        else if (task.stat === 'hp') { unit.hp = Math.min(unit.hp + task.gain, unit.maxHp); unit.maxHp += task.gain / 2; }
+        else if (task.stat === 'hp') {
+            unit.hp = Math.min(unit.hp + task.gain, unit.maxHp);
+            unit.maxHp += task.gain / 2;
+        }
         else if (task.stat === 'adm') unit.adm += task.gain;
-        else if (task.stat === 'xp') { unit.xp += task.gain; }
-
+        else if (task.stat === 'xp') {
+            unit.xp += task.gain;
+            // FIX: Check Level Up IMMEDIATELY after gaining XP
+            checkLevelUp(unit);
+        }
         // --- NUOVI TRAINING (Stats Secondarie) ---
         else if (task.stat === 'res') unit.res = fmt(unit.res + task.gain);
         else if (task.stat === 'cha') unit.cha = fmt(unit.cha + task.gain);
@@ -188,14 +186,19 @@ function completeTask(unit) {
     // Check Death
     if (unit.hp <= 0) {
         unit.hp = 0;
-        unit.previousState = unit.state; unit.state = "RECOVERING";
-        unit.affinity = Math.max(0, fmt(unit.affinity - 5));
+        unit.previousState = unit.state;
+        unit.state = "RECOVERING";
+        // Reset XP pending on death? Optional. For now let's keep it.
         log(`ALRT: ${unit.name} destabilized! Recovering...`);
-        render(); return;
+        render();
+        return; // Stop the loop
     }
 
     unit.startTime = Date.now(); // Loop automatico
-    if (selectedUnitIndex !== null && myUnits[selectedUnitIndex].uid === unit.uid) renderDetails();
+    if (selectedUnitIndex !== null && myUnits[selectedUnitIndex].uid === unit.uid) {
+        // Don't re-render the whole sidebar, just the details
+        renderDetails();
+    }
 }
 function checkLevelUp(unit) {
     let leveledUp = false;
@@ -249,229 +252,7 @@ function checkAdminLevelUp() {
         showSystemMessage("ADMIN LEVEL UP", `AUTHORITY INCREASED TO LEVEL <strong>${userStats.adminLvl}</strong><br>Mental Capacity Expanded.`, "gold");
     }
 }
-function startJointOp(opId) {
-    const u = myUnits[selectedUnitIndex];
-    const op = JOINT_OPS.find(o => o.id === opId);
 
-    // Security Check
-    if (op.reqSex && op.reqSex !== u.sex) {
-        showSystemMessage("COMPATIBILITY ERROR", `Unit Biology Incompatible.<br>Required: ${op.reqSex}`, "error");
-        return;
-    }
-    if (qp < op.cost) { showSystemMessage("ERROR", "Insufficient Buffer (TB)", "error"); return; }
-    if (activeNeuralUid !== null) { showSystemMessage("WARNING", "Neural Link Channel is Occupied", "error"); return; }
-    if (u.state !== "IDLE") { showSystemMessage("WARNING", "Unit is currently active in another process.", "error"); return; }
-    if (userStats.state === "EXHAUSTED") { showSystemMessage("CRITICAL", "Admin Mental Stability Critical.<br>Rest Required.", "error"); return; }
-
-    // Pagamento Buffer iniziale
-    qp -= op.cost;
-    updateGlobalBonus();
-
-    u.state = "LINKED";
-    u.currentTask = op;
-    u.startTime = Date.now();
-    u.duration = op.duration;
-    activeNeuralUid = u.uid;
-
-    log(`NEURAL: Link established with ${u.name}.`);
-    selectTrainingUnit(selectedUnitIndex);
-}
-function abortNeuralLink() {
-    if (activeNeuralUid === null) return;
-
-    let u = myUnits.find(unit => unit.uid === activeNeuralUid);
-    if (u) {
-        u.state = "IDLE";
-        u.currentTask = null;
-
-        // --- NUOVO: CALCOLA LIVELLI ACCUMULATI ---
-        checkLevelUp(u);      // Controlla Unità
-        checkAdminLevelUp();  // Controlla Admin
-        // -----------------------------------------
-
-        log(`NEURAL: Link with ${u.name} aborted. Processing Data...`);
-    }
-
-    activeNeuralUid = null;
-
-    // Aggiorna UI se necessario
-    if (selectedUnitIndex !== null) selectTrainingUnit(selectedUnitIndex);
-    updateGlobalBonus();
-}
-function processNeuralCycle(unit) {
-    let op = unit.currentTask;
-
-    // 1. CONTROLLO RISORSE
-    if (qp < op.cost) {
-        log(`NEURAL: Insufficient Buffer to maintain link. Cycle finished.`);
-        finalizeRewards(unit, op);
-        abortNeuralLink();
-        return;
-    }
-
-    // 2. PAGAMENTO RINNOVO
-    qp -= op.cost;
-
-    // 3. ASSEGNAZIONE PREMI
-    finalizeRewards(unit, op);
-
-    // 4. LOOP: RESET TIMER
-    unit.startTime = Date.now();
-
-    // 5. AGGIORNAMENTO UI MIRATO (NO REDRAW)
-    // Se stiamo guardando questa unità, aggiorniamo solo i testi
-    if (selectedUnitIndex !== null && myUnits[selectedUnitIndex].uid === unit.uid) {
-        // Aggiorna Sync Text
-        let syncEl = document.getElementById('training-sync-val');
-        if (syncEl) syncEl.innerText = unit.affinity;
-
-        // Aggiorna Badge Conteggio per questa task
-        let badgeEl = document.getElementById(`badge-${op.id}`);
-        if (badgeEl) badgeEl.innerText = `x${unit.neuralStats.history[op.id]}`;
-
-        // Aggiorna Contatori KO (se cambiati)
-        let admKoEl = document.getElementById('val-admin-ko');
-        let unitKoEl = document.getElementById('val-unit-ko');
-        if (admKoEl) admKoEl.innerText = unit.neuralStats.adminKoCount;
-        if (unitKoEl) unitKoEl.innerText = unit.neuralStats.unitKoCount;
-    }
-}
-function finalizeRewards(unit, op) {
-    if (userStats.state === "EXHAUSTED") return;
-
-    if (unit.hp <= 0) {
-        if (!unit.neuralStats) unit.neuralStats = { adminKoCount: 0, unitKoCount: 0, history: {} };
-        unit.neuralStats.unitKoCount++;
-        log(`NEURAL: Unit ${unit.name} critical (0 HP). No sync data gained.`);
-    } else {
-        // --- CALCOLO RNG (LUCK) ---
-        // Se fai un CRIT, ottieni bonus doppi
-        let isCrit = (Math.random() * 100) < unit.luc;
-        let critMult = isCrit ? 2.0 : 1.0;
-
-        if (isCrit) log(`✨ NEURAL RESONANCE! Critical Sync detected! (x2 Rewards)`);
-
-        // --- CALCOLO SYNC (Inflenzato da CHA) ---
-        // Formula: Gain Base * (1 + Charisma/100) * Crit
-        let chaBonus = 1 + (unit.cha / 200); // Es. 50 CHA = 1.25x
-        let actualSync = op.syncGain * chaBonus * critMult;
-
-        // Bonus Admin Level
-        if (userStats.adminLvl > op.reqLvl) actualSync += (userStats.adminLvl - op.reqLvl) * 0.2;
-
-        unit.xp += Math.floor(op.xpGain * critMult);
-        unit.affinity = fmt(unit.affinity + actualSync);
-        if (unit.affinity > MAX_AFFINITY) unit.affinity = MAX_AFFINITY;
-
-        // --- CALCOLO PSICHE (Incatenato a RES e CHA) ---
-        if (unit.psyche && unit.psyche.resistance === 0) {
-
-            // TRUST: Aumentato da CHA
-            if (op.trustMod) {
-                let trustGain = op.trustMod * (1 + unit.cha / 100) * critMult;
-                unit.psyche.trust = Math.min(100, Math.max(0, unit.psyche.trust + trustGain));
-            }
-
-            // STRESS: Ridotto da RES (Resilience)
-            // Formula: StressGain * (50 / (50 + RES)) -> Più RES hai, meno stress prendi
-            if (op.stressMod > 0) {
-                let mitigation = 50 / (50 + unit.res);
-                let stressGain = op.stressMod * mitigation;
-                unit.psyche.stress = Math.min(100, Math.max(0, unit.psyche.stress + stressGain));
-                // Se mitigation è alta, loggalo ogni tanto
-                if (mitigation < 0.6) log(`NEURAL: ${unit.name}'s resilience mitigated mental stress.`);
-            } else if (op.stressMod < 0) {
-                // Se l'attività RIDUCE lo stress (es. Tea Sync), RES aiuta a ridurne di più
-                let recoveryBonus = 1 + (unit.res / 100);
-                let stressHeal = op.stressMod * recoveryBonus * critMult;
-                unit.psyche.stress = Math.min(100, Math.max(0, unit.psyche.stress + stressHeal));
-            }
-
-            updatePsycheArchetype(unit);
-        }
-
-        // Storico
-        if (!unit.neuralStats) unit.neuralStats = { adminKoCount: 0, unitKoCount: 0, history: {} };
-        if (!unit.neuralStats.history[op.id]) unit.neuralStats.history[op.id] = 0;
-        unit.neuralStats.history[op.id]++;
-
-        log(`NEURAL: Sync +${fmt(actualSync)}% ${isCrit ? '(CRIT)' : ''}.`);
-    }
-
-    userStats.adminXp += 10;
-    updateGlobalBonus();
-}
-function psycheAction(index, action) {
-    let u = myUnits[index];
-    let p = u.psyche;
-    let cost = 10; // Costo standard TB
-
-    if (qp < cost) { showSystemMessage("ERROR", "Insufficient Buffer", "error"); return; }
-    qp -= cost;
-
-    // --- FASE 1: BREAKING RESISTANCE ---
-    if (p.resistance > 0) {
-        if (action === 'SOOTHE') {
-            // Metodo gentile: lento ma sicuro
-            let drop = 5 + Math.floor(Math.random() * 5);
-            p.resistance = Math.max(0, p.resistance - drop);
-            log(`NEURAL: Soothing signal sent. Resistance -${drop}%.`);
-        }
-        else if (action === 'BREAK') {
-            // Metodo violento: veloce ma alza lo stress (pericolo futuro)
-            let drop = 10 + Math.floor(Math.random() * 10);
-            p.resistance = Math.max(0, p.resistance - drop);
-            p.stress += 5; // Accumula stress latente
-            log(`NEURAL: Barrier brute-forced. Resistance -${drop}%, Stress +5.`);
-        }
-
-        if (p.resistance === 0) {
-            log(`SYSTEM: ⚠ TARGET RESISTANCE COLLAPSED. CORE ACCESS GRANTED.`);
-            showSystemMessage("NEURAL BREAKTHROUGH", `${u.name}'s mental barrier has fallen.<br>Begin imprinting phase.`, "success");
-        }
-    }
-    // --- FASE 2: IMPRINTING ---
-    else {
-        if (action === 'PRAISE') {
-            p.trust = Math.min(100, p.trust + 10);
-            p.stress = Math.max(0, p.stress - 5);
-            log(`NEURAL: Trust established. Devotion increasing.`);
-        }
-        else if (action === 'INTIMIDATE') {
-            p.stress = Math.min(100, p.stress + 10);
-            p.trust = Math.max(0, p.trust - 10);
-            log(`NEURAL: Fear induced. Obedience reinforced.`);
-
-            // RISCHIO REGRESSIONE
-            // Se intimidisci troppo un'unità che ha un po' di fiducia ma non è ancora Thrall...
-            if (p.trust > 20 && p.archetype !== "THRALL" && Math.random() < 0.3) {
-                p.resistance = 20; // Torna il muro!
-                p.trust = 0;
-                log(`⚠ WARNING: Target mind rejected the trauma! Resistance reformed.`);
-                showSystemMessage("PSYCHE REJECTION", `${u.name} is resisting your methods!<br>Barrier restored.`, "error");
-            }
-        }
-    }
-
-    updatePsycheArchetype(u);
-    updateGlobalBonus();
-    // Aggiorna la vista per mostrare i cambiamenti (barra che scompare/appare)
-    selectTrainingUnit(selectedUnitIndex);
-}
-function updatePsycheArchetype(u) {
-    let p = u.psyche;
-
-    // Se c'è ancora resistenza, è instabile
-    if (p.resistance > 0) {
-        p.archetype = "UNSTABLE";
-        // Malus alle stats (es. ATK dimezzato) potrebbe essere applicato qui
-    } else {
-        // Evoluzione basata su valori dominanti
-        if (p.stress >= 80 && p.trust < 30) p.archetype = "THRALL";
-        else if (p.trust >= 80 && p.stress < 30) p.archetype = "DEVOTED";
-        else p.archetype = "ASSET"; // Neutrale
-    }
-}
 function hardReset() { if (confirm("FORMAT DRIVE?")) { localStorage.clear(); location.reload(); } }
 function save() {
     localStorage.setItem('archive_os_save', JSON.stringify({

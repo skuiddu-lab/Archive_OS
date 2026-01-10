@@ -3,11 +3,13 @@ const MAX_AFFINITY = 100;
 const MAX_ADVISORS = 4;
 let currentBannerIndex = 0;
 
-let qp = 1000; // Renamed to "TB" (Terabytes) in UI
+let qp = 1000;
 let globalBonus = 1;
 let myUnits = []; 
 let selectedUnitIndex = null;
-let currentDetailTab = 'OPS'; // 'OPS' (Operations) oppure 'INFO' (Archive)
+let currentDetailTab = 'OPS';
+let activeNeuralUid = null; // Added this
+
 let userStats = {
     totalSummons: 0,
     totalOps: 0,
@@ -16,10 +18,5 @@ let userStats = {
     joinDate: Date.now(),
     stamina: 100,
     maxStamina: 100,
-    state: "ACTIVE" // "ACTIVE" oppure "EXHAUSTED"
+    state: "ACTIVE" 
 };
-
-let activeNeuralUid = null;
-let trainingActive = false;
-let trainingScore = 0;
-let trainingTimer = null;

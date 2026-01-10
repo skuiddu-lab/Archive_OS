@@ -3,19 +3,33 @@ function render() {
 }
 function renderSidebar() {
     const d = document.getElementById('unit-list');
-    d.innerHTML = "";
+    const scrollPos = d.scrollTop;
+    let html = "";
     myUnits.forEach((u, i) => {
         let active = (i === selectedUnitIndex) ? "active" : "";
-        let icon = u.state === "IDLE" ? "●" : (u.state === "RECOVERING" ? "×" : "▶");
+
+        // Define Icon based on state
+        let icon = "●"; // IDLE
+        if (u.state === "TRAINING" || u.state === "WORKING") icon = "▶";
+        if (u.state === "RECOVERING") icon = "×";
+
         let adv = u.isAdvisor ? "<span style='color:#f05'>[A]</span>" : "";
-        d.innerHTML += `
+        let limitTxt = u.limitBreak === 5 ? "<span style='color:gold'>★ MAX</span>" : `v0.${u.limitBreak}`;
+
+        html += `
             <button class="unit-list-btn ${active}" onclick="selectedUnitIndex=${i}; render()">
-                <div>${icon} ${u.name} ${adv}</div>
-                <div style="font-size:0.8em; text-align:right; color:${u.limitBreak === 5 ? 'gold' : '#777'}">
-                    ${u.limitBreak === 5 ? 'FULL' : 'v0.' + u.limitBreak}
+                <div style="pointer-events:none;">${icon} ${u.name} ${adv}</div>
+                <div style="font-size:0.8em; text-align:right; color:#777; pointer-events:none;">
+                    ${limitTxt}
                 </div>
             </button>`;
     });
+    // Only update DOM if it changed to avoid unnecessary repaints
+    if (d.innerHTML !== html) {
+        d.innerHTML = html;
+        // 2. RESTORE SCROLL POSITION
+        d.scrollTop = scrollPos;
+    }
 }
 function renderDetails() {
     const d = document.getElementById('unit-details');
@@ -83,7 +97,6 @@ function renderDetails() {
         // --- VISTA OPERATIONS (Task & Controlli) ---
 
         // Pannello Psiche (Read Only in questa vista)
-        if (u.psyche) html += renderPsychePanel(u, true);
 
         // NUOVA GRIGLIA STATS (Correttamente concatenata a 'html')
         html += `
@@ -258,8 +271,6 @@ function updateGlobalBonus() {
 function switchTab(t) {
     document.getElementById('view-summon').classList.add('hidden');
     document.getElementById('view-manage').classList.add('hidden');
-    const trainingView = document.getElementById('view-training');
-    if (trainingView) trainingView.classList.add('hidden');
 
     const target = document.getElementById('view-' + t);
     if (target) target.classList.remove('hidden');
@@ -269,14 +280,7 @@ function switchTab(t) {
         document.getElementById('summon-result').className = "hidden";
         closeBanner();
         renderBannerList();
-    } else if (t === 'training') {
-        // --- FIX BUG OPERATOR ---
-        // Se c'è un'unità selezionata ed è un OPERATOR, deselezionala per evitare errori
-        if (selectedUnitIndex !== null && myUnits[selectedUnitIndex].role === 'OPERATOR') {
-            selectedUnitIndex = null;
-            document.getElementById('training-area').innerHTML = "<p>> SELECT A UNIT TO BEGIN NEURAL SYNC...</p>";
-        }
-        renderTrainingView();
+
     } else {
         render();
     }
@@ -309,304 +313,7 @@ function toggleProfile() {
         panel.classList.add('open');
     }
 }
-function renderTrainingView() {
-    const list = document.getElementById('training-unit-list');
-    list.innerHTML = "";
 
-    myUnits.forEach((u, i) => {
-        // RIMOSSO IL FILTRO: Ora tutti possono allenarsi
-        // if (u.role === 'OPERATOR') return; 
-
-        let isSel = i === selectedUnitIndex;
-        let bgStyle = isSel ? 'background:#222;' : '';
-
-        list.innerHTML += `
-            <div class="action-card" onclick="selectTrainingUnit(${i})" 
-                 style="margin-bottom:10px; border-left:3px solid ${u.limitBreak === 5 ? 'gold' : 'var(--accent-primary)'}; ${bgStyle}">
-                <strong>${u.name}</strong><br>
-                <small style="color:#888">SYNC: ${u.affinity}%</small>
-            </div>
-        `;
-    });
-}
-function selectTrainingUnit(index) {
-    selectedUnitIndex = index;
-    const u = myUnits[index];
-    const area = document.getElementById('training-area');
-
-    // Fix dati mancanti
-    if (!u.neuralStats) u.neuralStats = { adminKoCount: 0, unitKoCount: 0, history: {} };
-    if (!u.psyche) u.psyche = { archetype: "UNSTABLE", resistance: 50, stress: 0, trust: 0 };
-
-    renderTrainingView();
-
-    // --- SEZIONE COMUNE: BARRA HP LIVE (Costruita qui per essere usata sia in Idle che in Linked) ---
-    let hpPct = (u.hp / u.maxHp) * 100;
-    // Se è KO usa rosso, altrimenti rosa (stile neural)
-    let hpColorClass = u.hp <= 0 ? "critical" : "neural";
-
-    let statusText = "";
-    if (u.hp <= 0) statusText = "<span class='status-text-ko'>⚠ CRITICAL FAILURE (KO)</span>";
-    else if (u.state === "IDLE" && u.hp < u.maxHp) statusText = "<span class='status-text-regen'>♻ REGENERATING...</span>";
-    else statusText = "STABLE";
-
-    let hpBarHtml = `
-        <div class="unit-status-panel">
-            <div style="display:flex; justify-content:space-between; font-size:0.8em; color:#aaa">
-                <span>UNIT INTEGRITY</span>
-                <span id="training-status-text">${statusText}</span>
-            </div>
-            <div class="hp-bar-container">
-                <div id="training-hp-bar" class="hp-bar-fill ${hpColorClass}" style="width:${hpPct}%"></div>
-            </div>
-            <div style="text-align:right; font-size:0.7em; margin-top:2px; font-family:var(--font-mono)">
-                <span id="training-hp-val">${Math.floor(u.hp)}</span> / ${u.maxHp} HP
-            </div>
-        </div>
-    `;
-
-    // 1. CHECK LINK ATTIVO (Ripristinato il codice reale)
-    if (u.state === 'LINKED') {
-        let elapsed = Date.now() - u.startTime;
-        let pct = Math.min((elapsed / u.duration) * 100, 100);
-        let isOverload = userStats.state === "EXHAUSTED";
-
-        let titleLink = isOverload ? "⚠ SYNC PAUSED (ADMIN OVERLOAD)" : "NEURAL SYNC IN PROGRESS...";
-        let titleColor = isOverload ? "#f00" : "#f0f";
-        let barColor = isOverload ? "#555" : "#f0f"; // Grigio se in pausa, viola se attivo
-
-        // HTML EXTRA PER IL RECUPERO ADMIN (Visibile solo se Exhausted)
-        let adminRecoveryHtml = "";
-        if (isOverload) {
-            let adminPct = (userStats.stamina / userStats.maxStamina) * 100;
-            adminRecoveryHtml = `
-                <div style="margin-top:20px; padding:15px; border:1px solid #f00; background:rgba(50,0,0,0.5); animation: flashText 1s infinite;">
-                    <div style="color:#f00; font-weight:bold; margin-bottom:5px">MENTAL STABILITY CRITICAL</div>
-                    <div style="font-size:0.8em; color:#aaa; margin-bottom:5px">RECOVERING CONSCIOUSNESS...</div>
-                    <div class="progress-bar-bg" style="background:#300; height:10px">
-                        <div id="admin-recovery-bar-inner" style="width:${adminPct}%; height:100%; background:#f00; box-shadow:0 0 10px #f00; transition:width 0.2s"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        area.innerHTML = `
-            <div style="text-align:center; width:100%; max-width:600px; animation:fadeIn 0.3s">
-                ${hpBarHtml} <h2 class="${isOverload ? 'blink' : ''}" style="color:${titleColor}; margin-top:20px">${titleLink}</h2>
-                <p style="color:${isOverload ? '#888' : '#ccc'}">${u.currentTask.name}</p>
-                
-                <div class="progress-bar-bg" style="height:20px; border:1px solid ${titleColor}">
-                    <div id="neural-bar" style="width:${pct}%; height:100%; background:${barColor}; box-shadow:0 0 15px ${barColor}"></div>
-                </div>
-
-                ${adminRecoveryHtml}
-                
-                <button onclick="abortNeuralLink()" style="margin-top:20px; border-color:var(--accent-secondary); color:var(--accent-secondary)">
-                    ${isOverload ? 'EMERGENCY ABORT' : 'ABORT LINK'}
-                </button>
-            </div>
-        `;
-        return;
-    }
-
-    // 2. CHECK ADMIN ESAUSTO (Senza link attivo su questa unità)
-    if (userStats.state === "EXHAUSTED") {
-        let adminPct = (userStats.stamina / userStats.maxStamina) * 100;
-        area.innerHTML = `
-            <div style="text-align:center; color:#f55; animation:fadeIn 0.3s">
-                ${hpBarHtml}
-                <h2 class="blink">⚠ MENTAL OVERLOAD ⚠</h2>
-                <div style="font-size:3em; margin:20px">🧠</div>
-                <p>System frozen. Restoring Stability...</p>
-                <div class="progress-bar-bg" style="width:200px; margin:0 auto; background:#300">
-                     <div id="admin-recovery-bar-inner" style="width:${adminPct}%; height:100%; background:#f00; transition:width 0.2s"></div>
-                </div>
-            </div>
-        `;
-        return;
-    }
-
-    // --- NUOVA UI PSICHE (Condizionamento - Solo se non in Link) ---
-    let p = u.psyche;
-    let psycheHtml = "";
-
-    // FASE 1: ROTTURA DEL MURO (Hostility > 0)
-    if (p.resistance > 0) {
-        psycheHtml = `
-            <div style="background:#1a0505; border:1px solid #500; padding:15px; margin-bottom:15px">
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px">
-                    <span style="color:#f55; font-weight:bold">⚠ NEURAL BARRIER DETECTED</span>
-                    <span style="color:#888; font-size:0.8em">STATUS: HOSTILE</span>
-                </div>
-                <div style="font-size:0.7em; color:#aaa; margin-bottom:5px">Reducing resistance required to enable Core Imprinting.</div>
-                
-                <div class="progress-bar-bg" style="background:#300; margin-bottom:15px">
-                    <div style="width:${p.resistance}%; background:#f00; height:100%; box-shadow:0 0 10px #f00"></div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                    <button onclick="psycheAction(${index}, 'SOOTHE')" style="border-color:#0af; color:#0af; font-size:0.8em">
-                        SOOTHE PROTOCOL<br><span style="font-size:0.7em; opacity:0.7">-5 Res | -10 TB</span>
-                    </button>
-                    <button onclick="psycheAction(${index}, 'BREAK')" style="border-color:#f00; color:#f00; font-size:0.8em">
-                        FORCE BREAK<br><span style="font-size:0.7em; opacity:0.7">-15 Res | +Stress | -10 TB</span>
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-    // FASE 2: IMPRINTING (Hostility == 0)
-    else {
-        // MODIFICA QUI: Cambia "PARTNER" in "DEVOTED"
-        let archetypeColor = p.archetype === "DEVOTED" ? "#f0f" : (p.archetype === "THRALL" ? "#a0f" : "#0ff");
-
-        psycheHtml = `
-            <div style="background:#051015; border:1px solid ${archetypeColor}; padding:15px; margin-bottom:15px">
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px">
-                    <span style="color:${archetypeColor}; font-weight:bold">✔ NEURAL PATHWAY OPEN</span>
-                    <span style="color:${archetypeColor}; font-size:0.8em">ARCHETYPE: ${p.archetype}</span>
-                </div>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px">
-                    <div>
-                        <div style="font-size:0.7em; color:#0af">TRUST (Devotion)</div>
-                        <div class="progress-bar-bg"><div style="width:${p.trust}%; background:#0af; height:100%"></div></div>
-                    </div>
-                    <div>
-                        <div style="font-size:0.7em; color:#a0f; text-align:right">STRESS (Fear)</div>
-                        <div class="progress-bar-bg"><div style="width:${p.stress}%; background:#a0f; height:100%"></div></div>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                    <button onclick="psycheAction(${index}, 'PRAISE')" style="border-color:#0af; color:#0af; font-size:0.8em">
-                        PRAISE<br><span style="font-size:0.7em; opacity:0.7">+Trust | -Stress</span>
-                    </button>
-                    <button onclick="psycheAction(${index}, 'INTIMIDATE')" style="border-color:#a0f; color:#a0f; font-size:0.8em">
-                        INTIMIDATE<br><span style="font-size:0.7em; opacity:0.7">+Stress | -Trust</span>
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    // --- UNIONE HTML ---
-    // --- UNIONE HTML ---
-    let opsHtml = `<div class="training-options-grid">`;
-    JOINT_OPS.forEach(op => {
-        // 1. FILTRO SESSO: Se l'opzione ha un requisito e l'unità non corrisponde, la saltiamo
-        if (op.reqSex && op.reqSex !== u.sex) return;
-
-        let isLocked = userStats.adminLvl < op.reqLvl;
-        let lockIcon = isLocked ? "🔒" : "⚡";
-        let color = isLocked ? "#555" : "var(--accent-gold)";
-        let count = u.neuralStats.history[op.id] || 0;
-
-        // Colori diversi per i tag sesso
-        let tagHtml = "";
-        if (op.reqSex === 'MALE') tagHtml = `<span style="color:#66f; font-size:0.7em; border:1px solid #44a; padding:0 3px; margin-right:5px">♂</span>`;
-        else if (op.reqSex === 'FEMALE') tagHtml = `<span style="color:#f6a; font-size:0.7em; border:1px solid #a46; padding:0 3px; margin-right:5px">♀</span>`;
-        else if (op.reqSex === 'ENTITY') tagHtml = `<span style="color:#a6f; font-size:0.7em; border:1px solid #64a; padding:0 3px; margin-right:5px">⟁</span>`;
-
-        opsHtml += `
-            <div class="joint-op-card ${isLocked ? 'locked' : ''}" onclick="${isLocked ? '' : `startJointOp('${op.id}')`}">
-                <div>
-                    <div style="color:${color}; font-weight:bold">
-                        ${tagHtml} ${lockIcon} ${op.name} <span id="badge-${op.id}" class="count-badge">x${count}</span>
-                    </div>
-                    <div style="font-size:0.8em; color:#888">${op.desc}</div>
-                </div>
-                <div style="text-align:right; font-family:var(--font-mono)">
-                    <div style="color:#0af; font-size:0.9em">-${op.staminaCost} STM</div>
-                    <div style="color:#f55; font-size:0.8em">-${op.hpCost} HP</div>
-                </div>
-            </div>
-        `;
-    });
-    opsHtml += `</div>`;
-
-    // Render Finale (Idle)
-    area.innerHTML = `
-        <div style="width:100%; max-width:600px; animation:fadeIn 0.3s">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px">
-                <div>
-                    <h2 style="margin:0; color:var(--accent-primary)">NEURAL LINK: ${u.name}</h2>
-                    <div style="font-size:0.75em; color:#aaa; margin-top:5px; font-family:var(--font-mono)">
-                        ADMIN KO: <span id="val-admin-ko" style="color:#f55">${u.neuralStats.adminKoCount}</span> | 
-                        UNIT KO: <span id="val-unit-ko" style="color:#f55">${u.neuralStats.unitKoCount}</span>
-                    </div>
-                </div>
-                <div style="text-align:right">
-                    <div style="font-size:2em">${u.affinity >= 100 ? '♥' : '♡'}</div>
-                    <small style="color:#aaa"><span id="training-sync-val">${u.affinity}</span>% SYNC</small>
-                </div>
-            </div>
-
-            ${hpBarHtml} ${psycheHtml} <h3 style="color:#666; font-size:0.9em; margin-top:20px">SYNC OPERATIONS</h3>
-            ${opsHtml}
-        </div>
-    `;
-}
-function renderPsychePanel(u, readOnly = false) {
-    let p = u.psyche;
-
-    // Calcolo stato attuale
-    let statusColor = "#fff";
-    if (p.archetype === "UNSTABLE") statusColor = "#f55";
-    else if (p.archetype === "THRALL") statusColor = "#a0f";
-
-    // MODIFICA QUI: Riconosci "DEVOTED" invece di PARTNER
-    else if (p.archetype === "DEVOTED") statusColor = "#f0f"; // #f0f è Magenta (Devotion)
-
-    else statusColor = "#0ff"; // Asset
-    let html = `
-        <div style="border:1px solid #333; padding:10px; margin-bottom:15px; background:#050505">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-                <span style="color:#888">MENTAL STATE:</span>
-                <span style="color:${statusColor}; font-weight:bold; letter-spacing:1px">${p.archetype}</span>
-            </div>
-
-            ${p.resistance > 0 ? `
-            <div style="font-size:0.8em; color:#f55; margin-bottom:2px">HOSTILITY / RESISTANCE</div>
-            <div class="progress-bar-bg" style="background:#300; margin-top:0; margin-bottom:10px">
-                <div style="width:${p.resistance}%; background:#f00; height:100%"></div>
-            </div>` : ''}
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                <div>
-                    <div style="font-size:0.7em; color:#0af">TRUST (Devotion)</div>
-                    <div class="progress-bar-bg" style="margin-top:2px">
-                        <div style="width:${p.trust}%; background:#0af; height:100%"></div>
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:0.7em; color:#a0f; text-align:right">STRESS (Fear)</div>
-                    <div class="progress-bar-bg" style="margin-top:2px; background:#202">
-                        <div style="width:${p.stress}%; background:#a0f; height:100%"></div>
-                    </div>
-                </div>
-            </div>
-    `;
-
-    // NUOVO: Mostra i pulsanti SOLO se readOnly è false (quindi solo in Neural Link se lo usiamo lì)
-    // Nota: Attualmente Neural Link usa la sua funzione di render interna in 'selectTrainingUnit', 
-    // quindi questa funzione viene usata principalmente da Virtual Assets (dove vogliamo readOnly=true).
-    if (!readOnly) {
-        html += `
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px">
-                <button onclick="psycheAction(${selectedUnitIndex}, 'PRAISE')" style="font-size:0.8em; border-color:#0af; color:#0af">
-                    PRAISE<br><span style="font-size:0.7em; opacity:0.7">-Res, +Trust</span>
-                </button>
-                <button onclick="psycheAction(${selectedUnitIndex}, 'PUNISH')" style="font-size:0.8em; border-color:#a0f; color:#a0f">
-                    INTIMIDATE<br><span style="font-size:0.7em; opacity:0.7">-Res, +Stress</span>
-                </button>
-            </div>
-        `;
-    }
-
-    html += `</div>`;
-    return html;
-}
 function updateProgressBar(unit, elapsed, isHeal = false) {
     let bar = document.getElementById(`bar-${unit.uid}`);
     if (!bar) return;

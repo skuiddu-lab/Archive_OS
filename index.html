@@ -18,7 +18,6 @@
     <nav>
       <button onclick="switchTab('summon')">DATA SCANNER</button>
       <button onclick="switchTab('manage')">VIRTUAL ASSETS</button>
-      <button onclick="switchTab('training')">NEURAL LINK</button>
     </nav>
     
     <div class="stats">
@@ -27,13 +26,6 @@
       </div>
 
       <div style="display:flex; align-items:center; gap:15px">
-          <div style="text-align:right">
-              <div style="font-size:0.7em; color:#0af">MENTAL STABILITY</div>
-              <div class="progress-bar-bg" style="width:100px; height:6px; margin-top:2px; background:#111; border:1px solid #333">
-                  <div id="admin-stamina-bar" style="width:100%; height:100%; background:#0af; box-shadow:0 0 5px #0af; transition:width 0.2s"></div>
-              </div>
-          </div>
-
           <div onclick="toggleProfile()" class="user-badge-container">
             <div style="margin-right:10px">BUFFER: <span id="qp-count">1000</span> TB</div>
             <div class="admin-badge" id="admin-badge-el">[ ADMIN_ID ]</div>
@@ -51,20 +43,6 @@
       <div class="panel-content" id="user-stats-content">
           </div>
   </div>
-  <div id="view-training" class="hidden">
-      <div class="training-container">
-          <div class="training-sidebar">
-              <h3>SYNC TARGET</h3>
-              <div id="training-unit-list"></div>
-          </div>
-          
-          <div class="training-main">
-              <div id="training-area">
-                  <p>> SELECT A UNIT TO BEGIN NEURAL SYNC...</p>
-              </div>
-          </div>
-      </div>
-    </div>
     <div id="view-summon">
       <h2>SOURCE SELECTOR</h2>
       <p>Choose a data stream to synchronize.</p>
