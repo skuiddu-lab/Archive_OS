@@ -1,79 +1,91 @@
+// scripts/datas.js
+
+// 1. SISTEMA DI TRATTI (Bonus passivi)
+const TRAITS_DB = {
+    'RUBBER': { name: 'Rubber Body', desc: 'High physical resistance', statMod: { res: 1.5 } },
+    'LOGIA': { name: 'Logia User', desc: 'Immune to normal attacks', statMod: { hp: 0.8, adm: 1.2 } }, // Meno HP ma schiva
+    'NINJA': { name: 'Shinobi', desc: 'High speed and critical', statMod: { luc: 1.3, atk: 1.1 } },
+    'KURAMA': { name: 'Nine-Tails Vessel', desc: 'Massive Chakra reserves', statMod: { hp: 2.0, atk: 1.5, adm: 0.5 } },
+    'SAIYAN': { name: 'Saiyan Blood', desc: 'Gets stronger when low HP', statMod: { atk: 1.4, growth: 1.2 } }
+};
+
 const UNIT_DB = [
-    // 3 STARS
+    // --- ONE PIECE ---
     {
-        id: "hunter_e", source: "GENERIC", name: "E-Rank Hunter", class: "Assassin", rarity: 3, role: "OPERATOR", sex: "MALE", // NUOVO
-        baseAtk: 80, baseHp: 400, baseAdm: 0, growth: 1.0,
-        desc: "A low-tier hunter struggling to survive in the weakest dungeons. Often carries healing stones.",
-        events: ["Lv.10: Unlock 'Stone Throw'", "Integrity 50%: Base HP Boost"]
+        id: "luffy_base", source: "ONE_PIECE", name: "Straw Hat Boy", class: "Brawler", rarity: 3, role: "OPERATOR", sex: "MALE",
+        baseAtk: 120, baseHp: 600, baseAdm: 5, growth: 1.2,
+        traits: ["RUBBER", "PIRATE"],
+        desc: "A boy made of rubber who dreams of being King of the Pirates.",
+        events: ["Lv.20: Unlock 'Gear Second'", "Integrity 100%: Unlock 'Haki'"]
     },
     {
-        id: "mage_student", source: "GENERIC", name: "Clock Tower Student", class: "Caster", rarity: 3, role: "ASSISTANT", sex: "FEMALE", // NUOVO
-        baseAtk: 20, baseHp: 100, baseAdm: 40, growth: 1.0,
-        desc: "An aspiring magus studying modern thaumaturgy. Good at processing logical data.",
-        events: ["Lv.10: Unlock 'Mana Transfer'", "Integrity 50%: Logic Efficiency +5%"]
-    },
-
-    // 4 STARS
-    {
-        id: "tank_iron", source: "SOLO", name: "Iron Tank", class: "Tank", rarity: 4, role: "OPERATOR", sex: "MALE", // NUOVO
-        baseAtk: 200, baseHp: 1500, baseAdm: 5, growth: 1.2,
-        desc: "A high-ranking A-Class hunter known for his impenetrable defense and loud personality.",
-        events: ["Lv.20: Unlock 'Taunt'", "Integrity 100%: Become S-Rank (Visual)"]
-    },
-    {
-        id: "shadow_soldier", source: "SOLO", name: "Shadow Infantry", class: "Assassin", rarity: 4, role: "HYBRID", sex: "ENTITY", // NUOVO
-        baseAtk: 300, baseHp: 800, baseAdm: 20, growth: 1.3,
-        desc: "A soldier risen from the dead. Loyal only to the Monarch, it feels no pain.",
-        events: ["Lv.20: Regeneration Passive", "Integrity 100%: Promote to Elite Knight"]
+        id: "zoro_base", source: "ONE_PIECE", name: "Pirate Hunter", class: "Saber", rarity: 4, role: "COMBAT", sex: "MALE",
+        baseAtk: 250, baseHp: 1200, baseAdm: 10, growth: 1.3,
+        traits: ["PIRATE", "SWORDSMAN"],
+        desc: "Uses three swords style. Terrible sense of direction.",
+        events: ["Lv.30: 'Asura'", "Integrity 100%: Black Blade"]
     },
 
-    // 5 STARS
+    // --- NARUTO ---
     {
-        id: "king_knights", source: "FATE", name: "King of Knights", class: "Saber", rarity: 5, role: "HYBRID", sex: "FEMALE", // NUOVO
-        baseAtk: 650, baseHp: 2800, baseAdm: 50, growth: 1.5,
-        desc: "The legendary wielder of the holy sword. A virtuous ruler who protects the timeline.",
-        events: ["Lv.30: Unlock 'Excalibur'", "Integrity 100%: Avalon Shield (Invincible)"]
+        id: "naruto_kid", source: "NARUTO", name: "Knucklehead Ninja", class: "Assassin", rarity: 3, role: "OPERATOR", sex: "MALE",
+        baseAtk: 90, baseHp: 800, baseAdm: 10, growth: 1.2,
+        traits: ["NINJA", "UZUMAKI"],
+        desc: "Noisy ninja who loves ramen. Contains a beast.",
+        events: ["Lv.15: 'Shadow Clone'", "Integrity 100%: Rasengan Mastery"]
     },
     {
-        id: "shadow_monarch", source: "SOLO", name: "Shadow Monarch", class: "Necromancer", rarity: 5, role: "OPERATOR", sex: "MALE", // NUOVO
+        id: "kakashi", source: "NARUTO", name: "Copy Ninja", class: "Assassin", rarity: 5, role: "ADVISOR", sex: "MALE",
+        baseAtk: 400, baseHp: 1800, baseAdm: 150, growth: 1.4,
+        traits: ["NINJA", "SHARINGAN", "TEACHER"],
+        desc: "Elite Jonin famous for copying over 1000 jutsus.",
+        events: ["Lv.50: 'Kamui'", "Integrity 100%: Sixth Hokage Candidate"]
+    },
+
+    // --- SOLO LEVELING ---
+    {
+        id: "shadow_monarch", source: "SOLO", name: "Shadow Monarch", class: "Necromancer", rarity: 5, role: "OPERATOR", sex: "MALE",
         baseAtk: 800, baseHp: 2000, baseAdm: 10, growth: 1.6,
-        desc: "The one who defies death. Commands an army of shadows and grows stronger with every fall.",
-        events: ["Lv.30: 'Arise' Skill", "Integrity 100%: Complete Resurrection"]
+        traits: ["SYSTEM_USER", "MONARCH"],
+        desc: "The one who defies death. Commands an army of shadows.",
+        events: ["Lv.30: 'Arise'", "Integrity 100%: Complete Resurrection"]
     },
+
+    // --- GENERIC ---
     {
-        id: "grand_caster", source: "FATE", name: "Flower Magus", class: "Caster", rarity: 5, role: "ASSISTANT", sex: "MALE", // NUOVO
-        baseAtk: 150, baseHp: 1800, baseAdm: 250, growth: 1.5,
-        desc: "The mage of flowers who observes humanity from the tower at the end of the world.",
-        events: ["Lv.30: 'Hero Creation'", "Integrity 100%: Garden of Avalon"]
+        id: "slime", source: "GENERIC", name: "Basic Slime", class: "Monster", rarity: 3, role: "OPERATOR", sex: "UNKNOWN",
+        baseAtk: 50, baseHp: 300, baseAdm: 0, growth: 1.0,
+        traits: ["MONSTER"],
+        desc: "Weakest monster. Good for practice.",
+        events: []
     }
 ];
 
 const BANNERS = [
-    { id: 'standard', name: 'STANDARD CACHE', source: 'ALL', color: '#00ffcc', desc: 'Contains all available data fragments.' },
-    { id: 'solo', name: 'GATE: DUNGEON', source: 'SOLO', color: '#4488ff', desc: 'Higher chance for Hunters and Shadows.' },
-    { id: 'fate', name: 'GATE: GRAIL', source: 'FATE', color: '#ffcc00', desc: 'Heroic Spirits virtualization focus.' }
+    { id: 'standard', name: 'STANDARD CACHE', source: 'ALL', color: '#00ffcc', desc: 'Mixed data fragments from all worlds.' },
+    { id: 'op_sea', name: 'GATE: GRAND LINE', source: 'ONE_PIECE', color: '#ff4400', desc: 'High chance for Pirates and Marines.' },
+    { id: 'ninja_w', name: 'GATE: HIDDEN LEAF', source: 'NARUTO', color: '#ffaa00', desc: 'High chance for Shinobi.' },
+    { id: 'solo', name: 'GATE: DUNGEON', source: 'SOLO', color: '#4488ff', desc: 'System Players and Shadows.' }
 ];
 
+// Per importare facilmente task: Basta aggiungere oggetti a questo array.
+// Modulo 'requirements' aggiunto per filtrare chi può farle.
 const TASKS = {
     training: [
-        // Training Base (Esistenti)
-        { id: 'sim_combat', name: 'Combat Simulation', category: 'COMBAT', duration: 1000, stat: 'atk', gain: 0.2, cost: 0 },
-        { id: 'sim_def', name: 'Firewall Hardening', category: 'COMBAT', duration: 1000, stat: 'hp', gain: 5, cost: 0 },
-        { id: 'sim_logic', name: 'Algorithm Optimization', category: 'LOGIC', duration: 3000, stat: 'adm', gain: 1, cost: 0 },
-
-        // --- NUOVI TRAINING SPECIALI (Mental & Personality) ---
-        { id: 'train_res', name: 'Trauma Dampening', category: 'UNIVERSAL', duration: 5000, stat: 'res', gain: 0.2, cost: 0 },
-        { id: 'train_cha', name: 'Empathy Modules', category: 'UNIVERSAL', duration: 5000, stat: 'cha', gain: 0.2, cost: 0 },
-        { id: 'train_luc', name: 'RNG Calibration', category: 'LOGIC', duration: 10000, stat: 'luc', gain: 0.1, cost: 0 }, // Molto lento
-
-        // Utility
-        { id: 'data_mine', name: 'Data Mining (XP)', category: 'UNIVERSAL', duration: 5000, stat: 'xp', gain: 20, cost: 0 },
-        { id: 'repair', name: 'System Defrag (Heal)', category: 'UNIVERSAL', duration: 2000, stat: 'hp', gain: 200, cost: 0 }
+        { id: 't_phys', name: 'Physical Cond.', category: 'COMBAT', duration: 1000, stat: 'atk', gain: 0.5, cost: 0 },
+        { id: 't_med', name: 'Meditation', category: 'LOGIC', duration: 1000, stat: 'adm', gain: 0.5, cost: 0 },
+        { id: 't_soc', name: 'Social Studies', category: 'UNIVERSAL', duration: 2000, stat: 'cha', gain: 0.5, cost: 0 }
     ],
     missions: [
-        { id: 'dungeon_e', name: 'E-Rank Dungeon', category: 'COMBAT', duration: 5000, rewardQP: 15, minAtk: 20, dmg: 40 },
-        { id: 'grail_war', name: 'Holy Grail Skirmish', category: 'COMBAT', duration: 15000, rewardQP: 50, minAtk: 100, dmg: 200 },
-        { id: 'hack_corp', name: 'Arasaka Data Heist', category: 'LOGIC', duration: 10000, rewardQP: 100, minAtk: 50, dmg: 100 },
-        { id: 'raid_boss', name: 'Dragon Slaying', category: 'COMBAT', duration: 30000, rewardQP: 300, minAtk: 300, dmg: 1000 }
+        // One Piece Missions
+        { id: 'm_east_blue', name: 'Patrol East Blue', category: 'COMBAT', duration: 5000, rewardQP: 20, minAtk: 50, dmg: 20, tags: ['PIRATE', 'MARINE'] },
+        { id: 'm_marineford', name: 'War of the Best', category: 'COMBAT', duration: 30000, rewardQP: 500, minAtk: 500, dmg: 1500, tags: ['PIRATE'] },
+        
+        // Naruto Missions
+        { id: 'm_cat', name: 'Catch the Cat', category: 'LOGIC', duration: 3000, rewardQP: 10, minAtk: 10, dmg: 5, tags: ['NINJA'] },
+        { id: 'm_chuunin', name: 'Chuunin Exams', category: 'COMBAT', duration: 15000, rewardQP: 150, minAtk: 200, dmg: 300, tags: ['NINJA'] },
+
+        // Generic
+        { id: 'm_rats', name: 'Clear Rats', category: 'COMBAT', duration: 2000, rewardQP: 5, minAtk: 5, dmg: 1 }
     ]
 };

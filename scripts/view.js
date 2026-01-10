@@ -47,6 +47,16 @@ function renderDetails() {
     // Gestione Tag Sex
     let sexTag = u.sex ? u.sex : "UNKNOWN";
 
+    // GENERAZIONE HTML TRATTI
+    let traitsHtml = "";
+    if (u.traits && u.traits.length > 0) {
+        traitsHtml = `<div style="margin-top:5px; display:flex; gap:5px; flex-wrap:wrap;">`;
+        u.traits.forEach(t => {
+            traitsHtml += `<span style="background:#222; border:1px solid #444; color:#aaa; font-size:0.7em; padding:2px 5px; border-radius:3px">${t}</span>`;
+        });
+        traitsHtml += `</div>`;
+    }
+
     // 1. HEADER FISSO (QUESTA PARTE MANCAVA NEL TUO CODICE!)
     let html = `
         <div style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center">
@@ -55,7 +65,7 @@ function renderDetails() {
                 <div style="font-size:0.8em; color:#888; margin-top:5px; font-family:var(--font-mono)">
                     ID: ${u.id} | CLASS: ${u.class} | SEX: <span style="color:#fff">${sexTag}</span>
                 </div>
-                <div style="font-size:0.8em; color:${color}; margin-top:2px">${integrityText}</div>
+                ${traitsHtml} <div style="font-size:0.8em; color:${color}; margin-top:2px">${integrityText}</div>
             </div>
             <button onclick="toggleLock(${selectedUnitIndex})" class="lock-btn ${u.isLocked ? 'locked' : ''}">${u.isLocked ? '🔒' : '🔓'}</button>
         </div>

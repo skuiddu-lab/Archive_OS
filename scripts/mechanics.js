@@ -1,38 +1,51 @@
 function createUnitInstance(template) {
     let baseRes = Math.floor(Math.random() * 40) + 10;
-
-    // Nuove Stats Secondarie (Randomizzate leggermente)
-    // Più alta è la rarità, più alti i valori base
+    
+    // 1. Calcolo Base (Come prima)
     let rarityMult = template.rarity * 5;
-    let defStat = 10 + Math.floor(Math.random() * 20) + rarityMult; // RES (Difesa Mentale)
-    let chaStat = 10 + Math.floor(Math.random() * 20) + rarityMult; // CHA (Empatia)
-    let lucStat = Math.floor(Math.random() * 50);                   // LUC (Fortuna pura)
+    let defStat = 10 + Math.floor(Math.random() * 20) + rarityMult; 
+    let chaStat = 10 + Math.floor(Math.random() * 20) + rarityMult; 
+    let lucStat = Math.floor(Math.random() * 50);
 
-    return {
+    // 2. CREAZIONE OGGETTO
+    let u = {
         ...template,
         uid: Date.now() + Math.random(),
         lvl: 1, xp: 0, maxXp: 100,
 
-        // Stats Primarie
         atk: template.baseAtk,
         hp: template.baseHp, maxHp: template.baseHp,
         adm: template.baseAdm,
 
-        // NUOVE STATS SECONDARIE
-        res: defStat,  // Riduce Stress e Danno HP
-        cha: chaStat,  // Aumenta Trust e Affinity gain
-        luc: lucStat,  // Crit Chance
+        res: defStat,
+        cha: chaStat,
+        luc: lucStat,
 
-        limitBreak: 0,
-        affinity: 0,
-        missionCount: 0,
-        state: "IDLE",
-        isAdvisor: false, isLocked: false,
-
-        // Fix Sex (Se mancante nel template, default Unknown)
+        limitBreak: 0, affinity: 0, missionCount: 0,
+        state: "IDLE", isAdvisor: false, isLocked: false,
         sex: template.sex || "UNKNOWN",
-
+        traits: template.traits || [] // Assicuriamo che esista l'array
     };
+
+    // 3. APPLICAZIONE BONUS DEI TRATTI (Nuovo codice)
+    if (u.traits && typeof TRAITS_DB !== 'undefined') {
+        u.traits.forEach(tKey => {
+            let traitInfo = TRAITS_DB[tKey];
+            if (traitInfo && traitInfo.statMod) {
+                // Applica modificatori percentuali
+                if (traitInfo.statMod.atk) u.atk = Math.floor(u.atk * traitInfo.statMod.atk);
+                if (traitInfo.statMod.hp) {
+                    u.maxHp = Math.floor(u.maxHp * traitInfo.statMod.hp);
+                    u.hp = u.maxHp;
+                }
+                if (traitInfo.statMod.luc) u.luc = Math.floor(u.luc * traitInfo.statMod.luc);
+                if (traitInfo.statMod.res) u.res = Math.floor(u.res * traitInfo.statMod.res);
+                if (traitInfo.statMod.growth) u.growth = u.growth * traitInfo.statMod.growth;
+            }
+        });
+    }
+
+    return u;
 }
 function processSummonLogic() {
     userStats.totalSummons++;
