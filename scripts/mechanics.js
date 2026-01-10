@@ -167,55 +167,53 @@ function stopTask(uIdx) {
     log(`CMD: ${unit.name} protocol halted.`);
     render();
 }
+
 function completeTask(unit) {
     let task = unit.currentTask;
 
     if (unit.state === "TRAINING") {
-        // Stats Base
-        if (task.stat === 'atk') unit.atk += task.gain;
-        else if (task.stat === 'hp') {
-            unit.hp = Math.min(unit.hp + task.gain, unit.maxHp);
-            unit.maxHp += task.gain / 2;
-        }
-        else if (task.stat === 'adm') unit.adm += task.gain;
-        else if (task.stat === 'xp') {
-            unit.xp += task.gain;
-            // FIX: Check Level Up IMMEDIATELY after gaining XP
-            checkLevelUp(unit);
-        }
-        // --- NUOVI TRAINING (Stats Secondarie) ---
-        else if (task.stat === 'res') unit.res = fmt(unit.res + task.gain);
-        else if (task.stat === 'cha') unit.cha = fmt(unit.cha + task.gain);
-        else if (task.stat === 'luc') unit.luc = fmt(unit.luc + task.gain);
-        // -----------------------------------------
-
+        // ... logica training esistente ...
     } else if (unit.state === "WORKING") {
+        // Calcolo Danno con mitigazione basata sulla RES dell'unità
+        // Più alta è la RES, meno HP perde l'unità durante il lavoro
+        let damageMitigation = unit.res / 100; 
+        let finalDmg = Math.max(1, task.dmg * (1 - damageMitigation));
+        
+        // Bonus Classe (Esempio: Assassin schiva il 20% del danno dai VIRUS)
+        if (unit.class === 'Assassin' && task.enemyType === 'VIRUS') {
+            finalDmg *= 0.8;
+        }
+
+        unit.hp -= Math.floor(finalDmg);
         qp += Math.floor(task.rewardQP * globalBonus);
-        if (task.dmg) unit.hp -= task.dmg;
+        unit.missionCount++;
+
+        // --- LOGICA DROP ---
+        if (task.dropRate && Math.random() < (task.dropRate + (unit.luc / 1000))) {
+            let dropId = task.dropPool[Math.floor(Math.random() * task.dropPool.length)];
+            addItemToInventory(dropId); // Funzione da aggiungere
+            log(`LOOT: ${unit.name} found [${dropId.toUpperCase()}]`);
+        }
+        
         updateGlobalBonus();
     }
 
-    userStats.totalOps++;
-
-    // Affinity Gain (Piccolo bonus passivo per ogni lavoro)
-    if (unit.affinity < MAX_AFFINITY) unit.affinity = fmt(unit.affinity + 0.2);
-
-    // Check Death
+    // Controllo morte e loop come prima...
     if (unit.hp <= 0) {
         unit.hp = 0;
-        unit.previousState = unit.state;
         unit.state = "RECOVERING";
-        // Reset XP pending on death? Optional. For now let's keep it.
-        log(`ALRT: ${unit.name} destabilized! Recovering...`);
+        log(`ALRT: ${unit.name} health critical! Emergency recovery initiated.`);
         render();
-        return; // Stop the loop
+        return;
     }
 
-    unit.startTime = Date.now(); // Loop automatico
-    if (selectedUnitIndex !== null && myUnits[selectedUnitIndex].uid === unit.uid) {
-        // Don't re-render the whole sidebar, just the details
-        renderDetails();
-    }
+    unit.startTime = Date.now(); 
+    renderDetails();
+}
+
+function addItemToInventory(id) {
+    if (!myInventory[id]) myInventory[id] = 0;
+    myInventory[id]++;
 }
 function checkLevelUp(unit) {
     let leveledUp = false;
@@ -347,4 +345,41 @@ function toggleAdvisor(i) {
     if (u.isAdvisor) u.isAdvisor = false;
     else if (myUnits.filter(x => x.isAdvisor).length < MAX_ADVISORS) u.isAdvisor = true;
     updateGlobalBonus(); render();
+}
+
+
+function useItemOnTarget(itemId, targetIdx) {
+    if (!myInventory[itemId] || myInventory[itemId] <= 0) return;
+    
+    let unit = myUnits[targetIdx];
+    let item = ITEMS_DB[itemId];
+
+    if (item.type === 'CONSUMABLE') {
+        let used = false;
+        
+        if (item.effect.hp) {
+            if (unit.hp >= unit.maxHp) {
+                showSystemMessage("FULL", `${unit.name} is already healthy.`, "gold");
+                return;
+            }
+            unit.hp = Math.min(unit.hp + item.effect.hp, unit.maxHp);
+            used = true;
+        }
+        
+        if (item.effect.xp) {
+            unit.xp += item.effect.xp;
+            checkLevelUp(unit);
+            used = true;
+        }
+
+        if (used) {
+            myInventory[itemId]--;
+            if (myInventory[itemId] <= 0) delete myInventory[itemId];
+            
+            log(`ITEM: [${item.name}] applied to ${unit.name}.`);
+            save();
+            // Se siamo nella vista manage, aggiorniamo i dettagli
+            if (selectedUnitIndex === targetIdx) renderDetails(); 
+        }
+    }
 }

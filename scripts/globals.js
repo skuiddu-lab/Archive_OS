@@ -2,14 +2,14 @@ const MAX_LIMIT_BREAK = 5;
 const MAX_AFFINITY = 100;
 const MAX_ADVISORS = 4;
 let currentBannerIndex = 0;
-
+let pendingItemId = null;
 let qp = 1000;
 let globalBonus = 1;
 let myUnits = []; 
 let selectedUnitIndex = null;
 let currentDetailTab = 'OPS';
 let activeNeuralUid = null; // Added this
-
+let myInventory = {};
 let userStats = {
     totalSummons: 0,
     totalOps: 0,

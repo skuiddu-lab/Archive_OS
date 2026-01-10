@@ -18,13 +18,13 @@
     <nav>
       <button onclick="switchTab('summon')">DATA SCANNER</button>
       <button onclick="switchTab('manage')">VIRTUAL ASSETS</button>
+      <button onclick="switchTab('storage')">STORAGE</button>
     </nav>
 
     <div class="stats">
       <div id="cpu-display" style="font-size: 0.7em; color: #aaa; text-align:right; margin-bottom:2px">
         CPU: [ NONE ]
       </div>
-
       <div style="display:flex; align-items:center; gap:15px">
         <div onclick="toggleProfile()" class="user-badge-container">
           <div style="margin-right:10px">BUFFER: <span id="qp-count">1000</span> TB</div>
@@ -40,23 +40,17 @@
         <h2>ADMIN PROFILE</h2>
         <button onclick="toggleProfile()" class="close-btn">×</button>
       </div>
-      <div class="panel-content" id="user-stats-content">
-      </div>
+      <div class="panel-content" id="user-stats-content"></div>
     </div>
 
     <div id="view-summon">
       <h2 style="margin-bottom: 5px; color:var(--accent-primary)">SOURCE SELECTOR</h2>
       <p style="margin-top: 0; color:#888">Choose a data stream to synchronize.</p>
-
       <div class="carousel-container">
         <button class="nav-arrow" onclick="prevBanner()">❮</button>
-
-        <div id="active-banner-card" class="featured-banner">
-        </div>
-
+        <div id="active-banner-card" class="featured-banner"></div>
         <button class="nav-arrow" onclick="nextBanner()">❯</button>
       </div>
-
       <div id="summon-actions" class="summon-actions-panel">
         <div class="summon-controls">
           <button class="summon-btn single" onclick="summonSingle()">
@@ -67,7 +61,6 @@
           </button>
         </div>
       </div>
-
       <div id="summon-result" class="hidden"></div>
     </div>
 
@@ -85,6 +78,13 @@
       </div>
     </div>
 
+    <div id="view-storage" class="hidden" style="padding:40px; text-align:center; overflow-y:auto; height:100%">
+      <h2 style="color:#fff; margin-bottom:10px">DATA FRAGMENTS STORAGE</h2>
+      <p style="color:#666; margin-top:0">Manage consumables and upgrade materials.</p>
+      <div id="storage-grid" class="action-grid" style="max-width:1000px; margin:30px auto;">
+      </div>
+    </div>
+
     <div class="scanlines"></div>
 
     <div id="console-container" class="collapsed">
@@ -98,6 +98,7 @@
       </div>
     </div>
   </main>
+
   <div id="sys-modal" class="hidden">
     <div class="modal-content">
       <h2 id="modal-title">SYSTEM ALERT</h2>
@@ -105,17 +106,21 @@
       <button onclick="closeModal()">ACKNOWLEDGE</button>
     </div>
   </div>
-  <div id="summon-modal-overlay" class="hidden">
+<div id="summon-modal-overlay" class="hidden">
     <div class="summon-modal-box">
-        <div class="summon-header">
-            <h3>// SCAN COMPLETE</h3>
-        </div>
-        
+        <div class="summon-header"><h3>// SCAN COMPLETE</h3></div>
         <div id="summon-result-content"></div>
-
         <button class="summon-confirm-btn" onclick="closeSummonModal()">ACQUIRE DATA</button>
     </div>
-</div>
+  </div>
+  <div id="unit-selector-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:6000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px)">
+      <div class="modal-content" style="width:400px; max-height:80vh; display:flex; flex-direction:column;">
+          <h2 style="color:var(--accent-primary)">SELECT TARGET</h2>
+          <div id="unit-selector-list" style="overflow-y:auto; margin-bottom:20px; text-align:left;">
+              </div>
+          <button onclick="closeUnitSelector()">CANCEL</button>
+      </div>
+  </div>
   <script src="scripts/datas.js"></script>
   <script src="scripts/globals.js"></script>
   <script src="scripts/utils.js"></script>

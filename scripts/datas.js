@@ -105,3 +105,30 @@ const TASKS = {
         }
     ]
 };
+// scripts/datas.js - Aggiornamento missioni
+
+const ITEMS_DB = {
+    'pot_s': { name: 'Small Potion', type: 'CONSUMABLE', desc: 'Heals 500 HP', effect: { hp: 500 } },
+    'xp_chip': { name: 'Data Chip', type: 'CONSUMABLE', desc: 'Grants 100 XP', effect: { xp: 100 } },
+    // Materiali per sbloccare i Limit Break superiori
+    'core_cyan': { name: 'Cyan Core', type: 'MATERIAL', desc: 'Used for v1.0 -> v2.0 evolution.' },
+    'core_gold': { name: 'Gold Core', type: 'MATERIAL', desc: 'Rare core for v4.0 -> v5.0 evolution.' }
+};
+
+TASKS.missions = [
+    { 
+        id: 'm_scan_sec', name: 'Sector Scan (E-Rank)', category: 'LOGIC', duration: 3000, 
+        rewardQP: 15, minAtk: 10, dmg: 5, enemyType: 'GLITCH', 
+        dropRate: 0.1, dropPool: ['pot_s', 'xp_chip']
+    },
+    { 
+        id: 'm_hunt_bug', name: 'Bug Hunting (D-Rank)', category: 'COMBAT', duration: 8000, 
+        rewardQP: 40, minAtk: 100, dmg: 50, enemyType: 'VIRUS', 
+        dropRate: 0.25, dropPool: ['pot_s', 'core_cyan']
+    },
+    { 
+        id: 'm_boss_raid', name: 'Raid: System Overlord (S-Rank)', category: 'COMBAT', duration: 60000, 
+        rewardQP: 1000, minAtk: 1500, dmg: 2000, enemyType: 'BOSS', 
+        dropRate: 0.5, dropPool: ['core_gold', 'xp_chip']
+    }
+];
