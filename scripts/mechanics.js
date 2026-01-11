@@ -168,18 +168,32 @@ function stopTask(uIdx) {
     render();
 }
 
+
 function completeTask(unit) {
     let task = unit.currentTask;
 
+    // --- LOGICA ALLENAMENTO (Era vuota!) ---
     if (unit.state === "TRAINING") {
-        // ... logica training esistente ...
-    } else if (unit.state === "WORKING") {
-        // Calcolo Danno con mitigazione basata sulla RES dell'unità
-        // Più alta è la RES, meno HP perde l'unità durante il lavoro
-        let damageMitigation = unit.res / 100; 
+        // Guadagno Stats
+        if (task.stat === 'atk') unit.atk = fmt(unit.atk + task.gain);
+        else if (task.stat === 'hp') {
+            unit.maxHp = Math.floor(unit.maxHp + task.gain);
+            unit.hp = Math.floor(unit.hp + task.gain);
+        }
+        else if (task.stat === 'adm') unit.adm = fmt(unit.adm + task.gain);
+        else if (task.stat === 'res') unit.res = fmt(unit.res + task.gain);
+        
+        // Log nel sistema
+        log(`TRAIN: ${unit.name} improved ${task.stat.toUpperCase()} (+${task.gain})`);
+    
+    } 
+    // --- LOGICA LAVORO (Missioni) ---
+    else if (unit.state === "WORKING") {
+        // Calcolo Danno con mitigazione basata sulla RES
+        let damageMitigation = (unit.res || 0) / 100; 
         let finalDmg = Math.max(1, task.dmg * (1 - damageMitigation));
         
-        // Bonus Classe (Esempio: Assassin schiva il 20% del danno dai VIRUS)
+        // Bonus Classe (Esempio: Assassin vs VIRUS)
         if (unit.class === 'Assassin' && task.enemyType === 'VIRUS') {
             finalDmg *= 0.8;
         }
@@ -188,27 +202,40 @@ function completeTask(unit) {
         qp += Math.floor(task.rewardQP * globalBonus);
         unit.missionCount++;
 
-        // --- LOGICA DROP ---
-        if (task.dropRate && Math.random() < (task.dropRate + (unit.luc / 1000))) {
-            let dropId = task.dropPool[Math.floor(Math.random() * task.dropPool.length)];
-            addItemToInventory(dropId); // Funzione da aggiungere
-            log(`LOOT: ${unit.name} found [${dropId.toUpperCase()}]`);
+        // Drop System
+        if (task.dropRate) {
+            let luckFactor = (unit.luc || 0) / 1000;
+            if (Math.random() < (task.dropRate + luckFactor)) {
+                let dropId = task.dropPool[Math.floor(Math.random() * task.dropPool.length)];
+                addItemToInventory(dropId); 
+                log(`LOOT: ${unit.name} found [${ITEMS_DB[dropId].name}]`);
+            }
         }
         
         updateGlobalBonus();
     }
 
-    // Controllo morte e loop come prima...
+    // --- CONTROLLO SALUTE (Comune a tutti) ---
     if (unit.hp <= 0) {
         unit.hp = 0;
         unit.state = "RECOVERING";
         log(`ALRT: ${unit.name} health critical! Emergency recovery initiated.`);
         render();
-        return;
+        return; // Esce dalla funzione per fermare il loop di lavoro
     }
 
+    // Riavvia il loop (Auto-Repeat)
     unit.startTime = Date.now(); 
+    
+    // Aggiorna interfaccia e salva
     renderDetails();
+    save();
+}
+
+// Assicurati che questa funzione helper esista nel file, serve per il drop
+function addItemToInventory(id) {
+    if (!myInventory[id]) myInventory[id] = 0;
+    myInventory[id]++;
 }
 
 function addItemToInventory(id) {
